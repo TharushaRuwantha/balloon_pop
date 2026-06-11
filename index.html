@@ -218,32 +218,27 @@ section{
     position:relative;
     overflow:hidden;
     border-radius:20px;
-    background:#111827;
+    background:#0b1220;
     border:2px solid #2563eb;
 }
 
-#player{
-    width:70px;
-    height:70px;
-    background:#2563eb;
-    border-radius:50%;
-    position:absolute;
-    bottom:10px;
-    left:315px;
-}
+.game-controls{ margin-bottom:16px; }
+.hud{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.hud > div{ background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); color:#cbd5e1; }
+.game-actions{ display:flex; gap:10px; justify-content:center; }
+.hint{ color:#94a3b8; margin-top:8px; }
 
-.orb{
-    width:35px;
-    height:35px;
-    background:#22d3ee;
-    border-radius:50%;
-    position:absolute;
-}
+#trail{ pointer-events:none; z-index:5; }
+#balloonLayer{ position:absolute; inset:0; z-index:2; }
+.balloon{ position:absolute; display:flex; align-items:flex-end; justify-content:center; transform-origin:center bottom; cursor:pointer; transition:transform .12s ease; user-select:none; }
+.balloon .emoji{ font-size:22px; display:block; margin-bottom:10px; }
+.balloon:before{ content:''; position:absolute; left:50%; transform:translateX(-50%); bottom:6px; width:6px; height:6px; background:rgba(255,255,255,0.2); border-radius:50%; }
+.balloon.popped{ transform:scale(0.2) rotate(-30deg); opacity:0; transition:transform .25s ease, opacity .25s ease; }
 
-.score{
-    font-size:30px;
-    margin-bottom:20px;
-}
+.score{ font-size:22px; margin-bottom:12px; color:#cbd5e1; }
+
+@keyframes floatUp{ from{ transform: translateY(0); } to{ transform: translateY(-10px);} }
+
 
 /* FOOTER */
 
@@ -413,12 +408,27 @@ Knowledge Points:
 <span id="score">0</span>
 </div>
 
+
+<div class="game-controls">
+    <div class="hud">
+        <div class="lives">Lives: <span id="lives">3</span></div>
+        <div class="timer">Time: <span id="time">60</span>s</div>
+        <div class="difficulty">Difficulty: <span id="difficulty">1</span></div>
+    </div>
+    <div class="game-actions">
+        <button id="startBtn" class="btn">Start Game</button>
+        <button id="restartBtn" class="btn" style="display:none;">Play Again</button>
+    </div>
+    <p class="hint">Slice or click balloons like Fruit Ninja — keep them from escaping!</p>
+</div>
+
 <div id="gameArea">
-<div id="player"></div>
+    <canvas id="trail"></canvas>
+    <div id="balloonLayer"></div>
 </div>
 
 <p style="margin-top:20px;color:#94a3b8;">
-Move your mouse and collect knowledge orbs.
+Click or swipe across balloons to pop them. Don't let them escape!
 </p>
 
 </div>
@@ -434,77 +444,230 @@ Move your mouse and collect knowledge orbs.
 
 <script>
 
+// Game elements
 const gameArea = document.getElementById("gameArea");
-const player = document.getElementById("player");
+const balloonLayer = document.getElementById("balloonLayer");
+const trailCanvas = document.getElementById("trail");
 const scoreElement = document.getElementById("score");
+const livesElement = document.getElementById("lives");
+const timeElement = document.getElementById("time");
+const difficultyElement = document.getElementById("difficulty");
+const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
 
 let score = 0;
+let lives = 3;
+let timeLeft = 60;
+let difficulty = 1;
+let gameInterval = null;
+let spawnInterval = null;
+let running = false;
 
-gameArea.addEventListener("mousemove",(e)=>{
+// Canvas setup for slice trail
+trailCanvas.width = gameArea.clientWidth;
+trailCanvas.height = gameArea.clientHeight;
+trailCanvas.style.position = 'absolute';
+trailCanvas.style.left = '0';
+trailCanvas.style.top = '0';
+const tctx = trailCanvas.getContext('2d');
 
-const rect = gameArea.getBoundingClientRect();
-
-let x = e.clientX - rect.left - 35;
-
-if(x < 0) x = 0;
-if(x > gameArea.clientWidth - 70)
-x = gameArea.clientWidth - 70;
-
-player.style.left = x + "px";
-
+window.addEventListener('resize', ()=>{
+    trailCanvas.width = gameArea.clientWidth;
+    trailCanvas.height = gameArea.clientHeight;
 });
 
-function createOrb(){
+// Utility: random
+function rand(min,max){return Math.random()*(max-min)+min}
 
-const orb = document.createElement("div");
-
-orb.classList.add("orb");
-
-orb.style.left =
-Math.random() * (gameArea.clientWidth - 35) + "px";
-
-orb.style.top = "-40px";
-
-gameArea.appendChild(orb);
-
-let pos = -40;
-
-const fall = setInterval(()=>{
-
-pos += 4;
-
-orb.style.top = pos + "px";
-
-const orbRect = orb.getBoundingClientRect();
-const playerRect = player.getBoundingClientRect();
-
-if(
-orbRect.left < playerRect.right &&
-orbRect.right > playerRect.left &&
-orbRect.bottom > playerRect.top &&
-orbRect.top < playerRect.bottom
-){
-
-score++;
-scoreElement.innerText = score;
-
-orb.remove();
-clearInterval(fall);
-
+// WebAudio pop sound
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playPop(){
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(100, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.26);
 }
 
-if(pos > gameArea.clientHeight){
-
-orb.remove();
-clearInterval(fall);
-
+function playMiss(){
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(200, audioCtx.currentTime);
+    g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.6);
 }
 
-},20);
+// Balloon factory
+let balloonId = 0;
+function spawnBalloon(){
+    const b = document.createElement('div');
+    b.className = 'balloon';
+    const id = 'b' + (balloonId++);
+    b.dataset.id = id;
+    // random color + fruit emoji
+    const fruits = ['🍎','🍊','🍓','🍇','🍋','🍉','🍌'];
+    const emoji = fruits[Math.floor(Math.random()*fruits.length)];
+    b.innerHTML = '<span class="emoji">'+emoji+'</span>';
+    const size = rand(50,90);
+    b.style.width = size + 'px';
+    b.style.height = size*1.2 + 'px';
+    b.style.left = rand(10, gameArea.clientWidth - size - 10) + 'px';
+    b.style.bottom = '-120px';
+    const speed = rand(1.2, 2.8) + difficulty*0.4;
+    b.dataset.speed = speed;
+    balloonLayer.appendChild(b);
 
+    // movement
+    const move = setInterval(()=>{
+        const bottom = parseFloat(b.style.bottom);
+        b.style.bottom = (bottom + speed) + 'px';
+        // remove if out of top
+        if(bottom > gameArea.clientHeight + 120){
+            clearInterval(move);
+            if(b.parentElement) b.remove();
+            // missed balloon
+            lives -= 1;
+            livesElement.innerText = lives;
+            playMiss();
+            if(lives <= 0) endGame();
+        }
+    },20);
+
+    // pop handler for clicks
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); popBalloon(b); });
 }
 
-setInterval(createOrb,1000);
+function popBalloon(b){
+    if(!b || !b.parentElement) return;
+    // pop animation
+    b.classList.add('popped');
+    playPop();
+    score += 10;
+    scoreElement.innerText = score;
+    setTimeout(()=>{ if(b.parentElement) b.remove(); },300);
+}
+
+// Slice handling: track pointer moves and check intersections
+let slicing = false;
+let points = [];
+function startSlice(x,y){ slicing = true; points = [{x,y,time:Date.now()}]; }
+function moveSlice(x,y){ if(!slicing) return; points.push({x,y,time:Date.now()}); drawTrail(); detectHits(); }
+function endSlice(){ slicing=false; points=[]; clearTrail(); }
+
+function drawTrail(){
+    tctx.clearRect(0,0,trailCanvas.width,trailCanvas.height);
+    tctx.lineWidth = 8;
+    tctx.lineJoin = 'round';
+    tctx.lineCap = 'round';
+    tctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    tctx.beginPath();
+    for(let i=0;i<points.length;i++){
+        const p = points[i];
+        if(i===0) tctx.moveTo(p.x,p.y); else tctx.lineTo(p.x,p.y);
+    }
+    tctx.stroke();
+}
+
+function clearTrail(){ tctx.clearRect(0,0,trailCanvas.width,trailCanvas.height); }
+
+function detectHits(){
+    if(points.length < 2) return;
+    // check recent segment
+    const a = points[points.length-2];
+    const b = points[points.length-1];
+    const balloons = Array.from(document.getElementsByClassName('balloon'));
+    balloons.forEach(balloon=>{
+        const rect = balloon.getBoundingClientRect();
+        const gaRect = gameArea.getBoundingClientRect();
+        const centerX = rect.left - gaRect.left + rect.width/2;
+        const centerY = rect.top - gaRect.top + rect.height/2;
+        // convert points to gameArea coords (y measured from top)
+        const ax = a.x; const ay = a.y;
+        const bxp = b.x; const byp = b.y;
+        // convert center to same coordinate space
+        const cx = centerX; const cy = centerY;
+        const dist = pointToSegmentDistance({x:cx,y:cy},{x:ax,y:ay},{x:bxp,y:byp});
+        if(dist < Math.max(rect.width,rect.height)/2){ popBalloon(balloon); }
+    });
+}
+
+function pointToSegmentDistance(p, v, w){
+    const l2 = (v.x-w.x)*(v.x-w.x)+(v.y-w.y)*(v.y-w.y);
+    if(l2===0) return Math.hypot(p.x-v.x,p.y-v.y);
+    let t = ((p.x-v.x)*(w.x-v.x)+(p.y-v.y)*(w.y-v.y))/l2;
+    t = Math.max(0,Math.min(1,t));
+    const projx = v.x + t*(w.x-v.x);
+    const projy = v.y + t*(w.y-v.y);
+    return Math.hypot(p.x-projx,p.y-projy);
+}
+
+// Game loop and control
+function startGame(){
+    if(running) return;
+    // resume audio context on user gesture
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    running = true; score = 0; lives = 3; timeLeft = 60; difficulty = 1;
+    scoreElement.innerText = score; livesElement.innerText = lives; timeElement.innerText = timeLeft; difficultyElement.innerText = difficulty;
+    startBtn.style.display = 'none'; restartBtn.style.display = 'none';
+    // spawn faster as difficulty increases
+    spawnInterval = setInterval(spawnBalloon, 1000);
+    // main timer
+    gameInterval = setInterval(()=>{
+        timeLeft -= 1;
+        if(timeLeft % 10 === 0) difficulty += 1;
+        difficultyElement.innerText = difficulty;
+        timeElement.innerText = timeLeft;
+        // increase spawn speed
+        clearInterval(spawnInterval);
+        const rate = Math.max(350, 1000 - (difficulty-1)*150);
+        spawnInterval = setInterval(spawnBalloon, rate);
+        if(timeLeft <= 0) endGame();
+    },1000);
+}
+
+function endGame(){
+    running = false;
+    clearInterval(gameInterval); clearInterval(spawnInterval);
+    // remove remaining balloons
+    document.querySelectorAll('.balloon').forEach(b=>b.remove());
+    startBtn.style.display = 'none'; restartBtn.style.display = 'inline-block';
+    // show final score in button
+    restartBtn.innerText = 'Play Again ('+score+' pts)';
+}
+
+startBtn.addEventListener('click', startGame);
+restartBtn.addEventListener('click', ()=>{ startBtn.style.display='none'; restartBtn.style.display='none'; startGame(); });
+
+// Pointer events for slice
+function getLocalPos(e){ const r=gameArea.getBoundingClientRect(); if(e.touches){ return {x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top}; } return {x: e.clientX - r.left, y: e.clientY - r.top}; }
+
+gameArea.addEventListener('pointerdown',(e)=>{ const p=getLocalPos(e); startSlice(p.x,p.y); });
+gameArea.addEventListener('pointermove',(e)=>{ const p=getLocalPos(e); moveSlice(p.x,p.y); });
+window.addEventListener('pointerup', endSlice);
+
+// allow clicking in empty space to pop nearest balloon
+gameArea.addEventListener('click',(e)=>{
+    const rect = gameArea.getBoundingClientRect();
+    const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+    const balloons = Array.from(document.getElementsByClassName('balloon'));
+    let nearest = null; let nd = Infinity;
+    balloons.forEach(b=>{
+        const r = b.getBoundingClientRect();
+        const bx = r.left - rect.left + r.width/2; const by = r.top - rect.top + r.height/2;
+        const d = Math.hypot(bx-x, by-y);
+        if(d < nd){ nd = d; nearest = b; }
+    });
+    if(nearest && nd < 80) popBalloon(nearest);
+});
+
+// End of script
 
 </script>
 
