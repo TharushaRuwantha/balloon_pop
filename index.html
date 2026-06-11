@@ -1,19 +1,512 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title> Tharusha </title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tharusha | Teacher • Lecturer • Software Engineer</title>
 
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;
+}
 
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    background:#0f172a;
+    color:white;
+    overflow-x:hidden;
+}
+
+/* Background */
+
+.bg{
+    position:fixed;
+    width:100%;
+    height:100%;
+    top:0;
+    left:0;
+    background:
+    radial-gradient(circle at 20% 20%,#2563eb33 0%,transparent 30%),
+    radial-gradient(circle at 80% 50%,#7c3aed33 0%,transparent 30%),
+    radial-gradient(circle at 50% 90%,#06b6d433 0%,transparent 30%);
+    z-index:-1;
+}
+
+/* NAV */
+
+nav{
+    position:fixed;
+    width:100%;
+    top:0;
+    backdrop-filter:blur(20px);
+    background:rgba(15,23,42,.5);
+    padding:20px 8%;
+    display:flex;
+    justify-content:space-between;
+    z-index:999;
+}
+
+nav h2{
+    color:#60a5fa;
+}
+
+nav ul{
+    display:flex;
+    gap:20px;
+    list-style:none;
+}
+
+nav a{
+    color:white;
+    text-decoration:none;
+}
+
+/* HERO */
+
+.hero{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:40px;
+}
+
+.hero-content{
+    max-width:900px;
+}
+
+.hero h1{
+    font-size:70px;
+    margin-bottom:15px;
+    background:linear-gradient(90deg,#60a5fa,#22d3ee,#a855f7);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+
+.hero h2{
+    font-size:28px;
+    margin-bottom:20px;
+    color:#cbd5e1;
+}
+
+.hero p{
+    line-height:1.8;
+    color:#94a3b8;
+    margin-bottom:30px;
+}
+
+.btn{
+    display:inline-block;
+    padding:15px 30px;
+    background:linear-gradient(45deg,#2563eb,#06b6d4);
+    border-radius:50px;
+    text-decoration:none;
+    color:white;
+    font-weight:bold;
+    transition:.3s;
+}
+
+.btn:hover{
+    transform:translateY(-5px);
+}
+
+/* SECTIONS */
+
+section{
+    padding:100px 10%;
+}
+
+.section-title{
+    text-align:center;
+    margin-bottom:50px;
+    font-size:40px;
+}
+
+/* GLASS CARD */
+
+.glass{
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(20px);
+    border-radius:20px;
+}
+
+/* ABOUT */
+
+.about{
+    padding:40px;
+    text-align:center;
+}
+
+.about p{
+    line-height:1.8;
+    color:#cbd5e1;
+}
+
+/* SKILLS */
+
+.skills-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:25px;
+}
+
+.skill{
+    padding:30px;
+    text-align:center;
+}
+
+.skill h3{
+    margin-bottom:15px;
+    color:#60a5fa;
+}
+
+/* TIMELINE */
+
+.timeline{
+    position:relative;
+    max-width:1000px;
+    margin:auto;
+}
+
+.timeline::after{
+    content:'';
+    position:absolute;
+    width:4px;
+    background:#2563eb;
+    top:0;
+    bottom:0;
+    left:50%;
+}
+
+.timeline-item{
+    width:50%;
+    padding:20px;
+    position:relative;
+}
+
+.timeline-item:nth-child(odd){
+    left:0;
+}
+
+.timeline-item:nth-child(even){
+    left:50%;
+}
+
+.timeline-content{
+    padding:20px;
+}
+
+/* GAME */
+
+.game-box{
+    text-align:center;
+}
+
+#gameArea{
+    width:100%;
+    max-width:700px;
+    height:400px;
+    margin:auto;
+    position:relative;
+    overflow:hidden;
+    border-radius:20px;
+    background:#111827;
+    border:2px solid #2563eb;
+}
+
+#player{
+    width:70px;
+    height:70px;
+    background:#2563eb;
+    border-radius:50%;
+    position:absolute;
+    bottom:10px;
+    left:315px;
+}
+
+.orb{
+    width:35px;
+    height:35px;
+    background:#22d3ee;
+    border-radius:50%;
+    position:absolute;
+}
+
+.score{
+    font-size:30px;
+    margin-bottom:20px;
+}
+
+/* FOOTER */
+
+footer{
+    text-align:center;
+    padding:40px;
+    color:#94a3b8;
+}
+
+@media(max-width:768px){
+
+.hero h1{
+    font-size:45px;
+}
+
+.timeline::after{
+    left:20px;
+}
+
+.timeline-item{
+    width:100%;
+    left:0 !important;
+    padding-left:50px;
+}
+
+}
+</style>
 </head>
 
-
 <body>
-<h1>Hi My Name is Tharusha </h1>
+
+<div class="bg"></div>
+
+<nav>
+    <h2>Tharusha</h2>
+    <ul>
+        <li><a href="#about">About</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#journey">Journey</a></li>
+        <li><a href="#game">Game</a></li>
+    </ul>
+</nav>
+
+<section class="hero">
+
+<div class="hero-content">
+
+<h1>THARUSHA</h1>
+
+<h2>Teacher • Lecturer • Software Engineer</h2>
+
+<p>
+I love teaching, building software, exploring AI, data science,
+and creating innovative learning experiences. My mission is to make
+technology and education more engaging, practical, and fun.
+</p>
+
+<a href="#about" class="btn">Explore My Story</a>
+
+</div>
+
+</section>
+
+<section id="about">
+
+<h2 class="section-title">About Me</h2>
+
+<div class="about glass">
+
+<p>
+Welcome to my digital world.
+
+I am Tharusha, a lecturer, software engineer, AI enthusiast,
+and educator. My passion lies in combining technology with education
+to create engaging experiences that inspire students and professionals.
+
+Over the years I have developed web applications, mobile apps,
+AI systems, games, and educational platforms while helping hundreds
+of students learn technology in a more enjoyable way.
+
+My goal is simple:
+
+Build technology that makes people's lives better and learning
+more exciting.
+</p>
+
+</div>
+
+</section>
+
+<section id="skills">
+
+<h2 class="section-title">What I Do</h2>
+
+<div class="skills-grid">
+
+<div class="skill glass">
+<h3>Software Engineering</h3>
+<p>Full Stack Development, React, ASP.NET, Java, MERN, Mobile Apps.</p>
+</div>
+
+<div class="skill glass">
+<h3>Artificial Intelligence</h3>
+<p>Machine Learning, RAG Systems, NLP, Predictive Analytics.</p>
+</div>
+
+<div class="skill glass">
+<h3>Teaching</h3>
+<p>Interactive learning experiences and practical knowledge sharing.</p>
+</div>
+
+<div class="skill glass">
+<h3>Data Science</h3>
+<p>Finding hidden patterns and turning data into decisions.</p>
+</div>
+
+</div>
+
+</section>
+
+<section id="journey">
+
+<h2 class="section-title">My Journey</h2>
+
+<div class="timeline">
+
+<div class="timeline-item">
+<div class="timeline-content glass">
+<h3>Student</h3>
+<p>Started exploring programming and technology.</p>
+</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-content glass">
+<h3>Developer</h3>
+<p>Built websites, applications and software solutions.</p>
+</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-content glass">
+<h3>Teacher</h3>
+<p>Helped students learn technology in creative ways.</p>
+</div>
+</div>
+
+<div class="timeline-item">
+<div class="timeline-content glass">
+<h3>AI Enthusiast</h3>
+<p>Working with machine learning and intelligent systems.</p>
+</div>
+</div>
+
+</div>
+
+</section>
+
+<section id="game">
+
+<h2 class="section-title">Play While Exploring</h2>
+
+<div class="game-box">
+
+<div class="score">
+Knowledge Points:
+<span id="score">0</span>
+</div>
+
+<div id="gameArea">
+<div id="player"></div>
+</div>
+
+<p style="margin-top:20px;color:#94a3b8;">
+Move your mouse and collect knowledge orbs.
+</p>
+
+</div>
+
+</section>
+
+<footer>
+
+<h3>Let's Build Something Amazing Together</h3>
+<p>Teacher • Lecturer • Software Engineer • AI Enthusiast</p>
+
+</footer>
+
+<script>
+
+const gameArea = document.getElementById("gameArea");
+const player = document.getElementById("player");
+const scoreElement = document.getElementById("score");
+
+let score = 0;
+
+gameArea.addEventListener("mousemove",(e)=>{
+
+const rect = gameArea.getBoundingClientRect();
+
+let x = e.clientX - rect.left - 35;
+
+if(x < 0) x = 0;
+if(x > gameArea.clientWidth - 70)
+x = gameArea.clientWidth - 70;
+
+player.style.left = x + "px";
+
+});
+
+function createOrb(){
+
+const orb = document.createElement("div");
+
+orb.classList.add("orb");
+
+orb.style.left =
+Math.random() * (gameArea.clientWidth - 35) + "px";
+
+orb.style.top = "-40px";
+
+gameArea.appendChild(orb);
+
+let pos = -40;
+
+const fall = setInterval(()=>{
+
+pos += 4;
+
+orb.style.top = pos + "px";
+
+const orbRect = orb.getBoundingClientRect();
+const playerRect = player.getBoundingClientRect();
+
+if(
+orbRect.left < playerRect.right &&
+orbRect.right > playerRect.left &&
+orbRect.bottom > playerRect.top &&
+orbRect.top < playerRect.bottom
+){
+
+score++;
+scoreElement.innerText = score;
+
+orb.remove();
+clearInterval(fall);
+
+}
+
+if(pos > gameArea.clientHeight){
+
+orb.remove();
+clearInterval(fall);
+
+}
+
+},20);
+
+}
+
+setInterval(createOrb,1000);
+
+</script>
 
 </body>
-
-
-
-
-
-
 </html>
